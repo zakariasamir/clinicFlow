@@ -27,4 +27,5 @@ COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 5000
 
-CMD ["node", "dist/index.js"]
+# Automatically push database schema & seed initial admin on launch
+CMD ["sh", "-c", "yarn prisma db push && yarn prisma:seed && node dist/index.js"]

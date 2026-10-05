@@ -1,0 +1,46 @@
+services:
+  # 1. Backend REST API
+  - type: web
+    name: clinicflow-api
+    runtime: docker
+    dockerfilePath: clinicflow-api-v1/Dockerfile
+    dockerContext: clinicflow-api-v1
+    plan: free
+    healthCheckPath: /status
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: clinicflow-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: CORS_ORIGIN
+        value: "*"
+
+  # 2. Frontend Next.js Web App
+  - type: web
+    name: clinicflow-platform
+    runtime: docker
+    dockerfilePath: clinicflow-platform-v1/Dockerfile
+    dockerContext: clinicflow-platform-v1
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: NEXT_PUBLIC_API_URL
+        value: https://clinicflow-api.onrender.com/api/v1
+
+databases:
+  # 3. Managed PostgreSQL Database (Free Tier)
+  - name: clinicflow-db
+    databaseName: clinicflow_db
+    user: clinicflow_user
+    plan: free
