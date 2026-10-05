@@ -35,6 +35,11 @@ services:
         value: production
       - key: PORT
         value: 3000
+      - key: BACKEND_HOST
+        fromService:
+          type: web
+          name: clinicflow-api
+          property: host
       - key: NEXT_PUBLIC_API_URL
         value: https://clinicflow-api.onrender.com/api/v1
 
