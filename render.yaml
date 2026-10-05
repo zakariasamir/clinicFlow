@@ -2,7 +2,7 @@ services:
   # 1. Backend REST API
   - type: web
     name: clinicflow-api
-    runtime: docker
+    env: docker
     dockerfilePath: clinicflow-api-v1/Dockerfile
     dockerContext: clinicflow-api-v1
     plan: free
@@ -26,13 +26,10 @@ services:
   # 2. Frontend Next.js Web App
   - type: web
     name: clinicflow-platform
-    runtime: docker
+    env: docker
     dockerfilePath: clinicflow-platform-v1/Dockerfile
     dockerContext: clinicflow-platform-v1
     plan: free
-    dockerBuildArgs:
-      - key: NEXT_PUBLIC_API_URL
-        value: https://clinicflow-api.onrender.com/api/v1
     envVars:
       - key: NODE_ENV
         value: production
