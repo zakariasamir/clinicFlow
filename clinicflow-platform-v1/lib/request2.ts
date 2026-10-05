@@ -1,10 +1,19 @@
 import axios from "axios";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+let runtimeApiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+
+if (typeof window !== "undefined") {
+  // Try to read stored or runtime config if available
+  const storedUrl = localStorage.getItem("clinicflow_api_url");
+  if (storedUrl) {
+    runtimeApiUrl = storedUrl;
+  }
+}
+
+export const API_BASE_URL = runtimeApiUrl;
 
 const request2 = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: runtimeApiUrl,
   headers: {
     "Content-Type": "application/json",
   },
@@ -13,6 +22,12 @@ const request2 = axios.create({
 request2.interceptors.request.use(
   (config) => {
     if (typeof window !== "undefined") {
+      // Ensure baseURL is updated from localStorage if changed
+      const currentStored = localStorage.getItem("clinicflow_api_url");
+      if (currentStored && config.baseURL !== currentStored) {
+        config.baseURL = currentStored;
+      }
+
       const token = localStorage.getItem("clinicflow_token");
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;

@@ -4,6 +4,7 @@ import Head from "next/head";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { ModalsProvider } from "@mantine/modals";
 import { Notifications } from "@mantine/notifications";
+import { useEffect } from "react";
 
 const theme = createTheme({
   primaryColor: "teal",
@@ -12,6 +13,18 @@ const theme = createTheme({
 });
 
 export default function App({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    // Fetch runtime server-side API URL config so dynamic Render host changes take effect immediately
+    fetch("/api/config")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.apiUrl) {
+          localStorage.setItem("clinicflow_api_url", data.apiUrl);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   return (
     <MantineProvider theme={theme} defaultColorScheme="light">
       <Head>
