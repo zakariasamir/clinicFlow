@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  STAFF
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String        @id @default(uuid()) @db.Uuid
+  email        String        @unique @db.VarChar(255)
+  passwordHash String        @map("password_hash") @db.VarChar(255)
+  fullName     String        @map("full_name") @db.VarChar(255)
+  role         Role          @default(STAFF)
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+
+  appointments Appointment[] @relation("UserAppointments")
+  auditLogs    AuditLog[]    @relation("UserAuditLogs")
+
+  @@map("users")
+}
+
+model Patient {
+  id           String        @id @default(uuid()) @db.Uuid
+  cin          String        @unique @db.VarChar(20)
+  fullName     String        @map("full_name") @db.VarChar(255)
+  phone        String        @db.VarChar(50)
+  birthDate    DateTime      @map("birth_date") @db.Date
+  address      String?       @db.Text
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  deletedAt    DateTime?     @map("deleted_at")
+
+  appointments Appointment[] @relation("PatientAppointments")
+
+  @@index([cin], name: "idx_patients_cin")
+  @@index([fullName], name: "idx_patients_full_name")
+  @@map("patients")
+}
+
+model Appointment {
+  id              String            @id @default(uuid()) @db.Uuid
+  patientId       String            @map("patient_id") @db.Uuid
+  createdById     String?           @map("created_by") @db.Uuid
+  appointmentDate DateTime          @map("appointment_date")
+  status          AppointmentStatus @default(PENDING)
+  reason          String            @db.VarChar(255)
+  notes           String?           @db.Text
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  deletedAt       DateTime?         @map("deleted_at")
+
+  patient         Patient           @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Restrict)
+  creator         User?             @relation("UserAppointments", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([patientId, appointmentDate], name: "idx_appointments_patient_date")
+  @@index([appointmentDate, status], name: "idx_appointments_date_status")
+  @@index([status], name: "idx_appointments_status")
+  @@map("appointments")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @map("actor_id") @db.Uuid
+  action    String   @db.VarChar(100)
+  entity    String   @db.VarChar(100)
+  entityId  String   @map("entity_id") @db.VarChar(100)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor     User?    @relation("UserAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId], name: "idx_audit_logs_entity")
+  @@index([createdAt], name: "idx_audit_logs_created_at")
+  @@map("audit_logs")
+}

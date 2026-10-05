@@ -1,0 +1,35 @@
+# Build Stage
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install libc6-compat for Alpine compatibility with Next.js SWC
+RUN apk add --no-cache libc6-compat
+
+COPY package.json yarn.lock* ./
+RUN yarn install --frozen-lockfile
+
+COPY . .
+
+ARG NEXT_PUBLIC_API_URL=http://localhost:5000/api/v1
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_TELEMETRY_DISABLED=1
+
+RUN yarn build
+
+# Production Stage
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY package.json yarn.lock* ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+EXPOSE 3000
+
+CMD ["yarn", "start"]
